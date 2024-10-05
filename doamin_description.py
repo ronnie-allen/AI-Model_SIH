@@ -1,3 +1,4 @@
+import fitz  # PyMuPDF for PDF extraction
 from langchain_ollama import OllamaLLM
 
 # Initialize the Ollama model
@@ -7,55 +8,59 @@ except Exception as e:
     print("Error initializing OllamaLLM. Ensure that the model is available and properly configured.")
     raise e
 
-# Function to generate output with detailed content focused on the domain for courses
-def generate_detailed_paragraph(name, chosen_career, domain, skills_known, description):
+# Function to extract content from the PDF file
+def extract_pdf_content(pdf_path):
     try:
-        # Construct the dynamic prompt
+        # Open the PDF
+        doc = fitz.open(pdf_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()  # Extract text from each page
+        return text
+    except Exception as e:
+        print("Error extracting content from PDF.")
+        raise e
+
+# Function to generate detailed report analysis based on medical data
+def generate_health_report(pdf_data):
+    try:
+        # Construct the dynamic prompt based on the extracted data
         prompt = f"""
-        You are an AI career advisor. A student has provided the following details:
+        You are an AI medical assistant. Analyze the following patient report data and provide detailed medical insights:
 
-        - Name: {name}
-        - Chosen Career: {chosen_career}
-        - Domain: {domain}
-        - Skills Known: {skills_known}
-        - Description: {description}
+        Patient Report Data:
+        {pdf_data}
 
-        Based on this, follow the format below. Ensure that each section's paragraph contains a minimum of 300 words. In section 4, focus entirely on the domain ({domain}) for course recommendations without referring to other inputs like skills or description. Be as detailed and crisp as possible with actionable suggestions. Format section 4 as follows:
-
-        1. Start with a greeting and paragraph combining the student's name and the domain ({domain}).
-        2. Write a paragraph on the current domain trends based on the user's input for {domain}.
-        3. Write a paragraph that combines the skills known ({skills_known}) with the domain and description ({description}). Suggest how they can utilize these skills in the domain.
-        4. Provide a detailed paragraph of suggestions focusing **only** on the domain ({domain}) with the following subheadings:
-           - **Courses to be chosen**: Provide specific degree-level recommendations like B.Tech, B.Sc, Diploma, and other relevant programs related to the {domain} domain. Do not mention other inputs such as skills or descriptions.
-           - **Skills to acquire**: Mention relevant skills to the {domain}, without referencing the user's specific skills.
-           - **Other domains to explore**: Suggest related domains that can enhance expertise in {domain}.
+        Based on the above, write a detailed summary as a doctor would. Focus on the following:
+        
+        1. Glucose Tolerance Test Results
+        2. Current condition of the patient (e.g., pre-diabetes, diabetes, normal)
+        3. Any necessary medical advice or recommendations based on the glucose levels
+        4. A final detailed analysis with a summary of the patient’s health.
         """
 
         # Generate the content using the model
         response = llm(prompt)
         return response
     except Exception as e:
-        print("Error generating the paragraph.")
+        print("Error generating the health report.")
         raise e
 
-# Main function to accept user inputs and generate the structured output
+# Main function to accept the PDF file and generate the report
 if __name__ == "__main__":
     try:
-        print("Enter the details for career guidance:")
+        # Specify the path to the uploaded PDF file
+        pdf_path = 'report2.pdf'
 
-        # Custom input fields
-        name = input("Enter your name: ")
-        chosen_career = input("Enter your chosen career: ")
-        domain = input("Enter your domain (e.g., Technology, Science, Arts): ")
-        skills_known = input("Enter the skills you know (e.g., Programming, Data Analysis, Painting): ")
-        description = input("Enter a brief description of your goals or vision: ")
+        # Extract content from the PDF
+        extracted_data = extract_pdf_content(pdf_path)
 
-        # Generate the career guidance paragraph
-        output = generate_detailed_paragraph(name, chosen_career, domain, skills_known, description)
+        # Generate the health report based on the PDF data
+        health_report = generate_health_report(extracted_data)
 
-        # Output the generated paragraph in the required format
-        print("\nGenerated Career Guidance:\n")
-        print(output)
+        # Output the generated report
+        print("\nGenerated Medical Report:\n")
+        print(health_report)
 
     except Exception as e:
         print(f"An error occurred: {e}")
